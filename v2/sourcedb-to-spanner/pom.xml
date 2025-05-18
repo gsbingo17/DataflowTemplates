@@ -74,6 +74,16 @@
       <artifactId>postgresql</artifactId>
       <version>${postgresql.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.google.cloud</groupId>
+      <artifactId>google-cloud-spanner</artifactId>
+      <version>6.66.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.microsoft.sqlserver</groupId>
+      <artifactId>mssql-jdbc</artifactId>
+      <version>${mssql-jdbc.version}</version>
+    </dependency>
 
     <!-- https://mvnrepository.com/artifact/com.datastax.oss/java-driver-core -->
     <dependency>
@@ -176,12 +186,7 @@
       <groupId>org.apache.beam</groupId>
       <artifactId>beam-sdks-java-io-cassandra</artifactId>
     </dependency>
-    <dependency>
-      <groupId>com.microsoft.sqlserver</groupId>
-      <artifactId>mssql-jdbc</artifactId>
-      <version>${mssql-jdbc.version}</version>
-      <scope>test</scope>
-    </dependency>
+
     <!-- https://mvnrepository.com/artifact/org.apache.beam/beam-sdks-java-io-common -->
     <!-- test dependencies for localCassandraIO begin -->
     <dependency>
@@ -210,7 +215,13 @@
       <version>1.19.0</version>
       <scope>test</scope>
     </dependency>
-
+       <!-- Add DirectRunner for local execution -->
+    <dependency>
+      <groupId>org.apache.beam</groupId>
+      <artifactId>beam-runners-direct-java</artifactId>
+      <version>${beam.version}</version>
+      <scope>runtime</scope>
+    </dependency>
     <!-- test dependencies for localCassandraIO end -->
 
     <dependency>

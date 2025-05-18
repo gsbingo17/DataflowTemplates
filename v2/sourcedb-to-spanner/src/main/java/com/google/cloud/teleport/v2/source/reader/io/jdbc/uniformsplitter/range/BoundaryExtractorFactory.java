@@ -85,11 +85,42 @@ public class BoundaryExtractorFactory {
       @Nullable BoundaryTypeMapper boundaryTypeMapper)
       throws SQLException {
     Preconditions.checkArgument(partitionColumn.columnClass().equals(Long.class));
-    resultSet.next();
+
+    if (!resultSet.next()) {
+      throw new SQLException(
+          "Boundary query returned no results for column: " + partitionColumn.columnName());
+    }
+
+    Long start = resultSet.getLong(1);
+    Long end = resultSet.getLong(2);
+
+    // Check if the result is NULL (JDBC returns 0 for NULL numeric values)
+    boolean startIsNull = resultSet.wasNull();
+    if (startIsNull) {
+      throw new SQLException(
+          "Boundary query returned NULL for MIN value of column: " + partitionColumn.columnName());
+    }
+
+    resultSet.getLong(2);
+    boolean endIsNull = resultSet.wasNull();
+    if (endIsNull) {
+      throw new SQLException(
+          "Boundary query returned NULL for MAX value of column: " + partitionColumn.columnName());
+    }
+
+    // Log the actual values found
+    System.out.println(
+        "DEBUG: Boundary values for "
+            + partitionColumn.columnName()
+            + ": MIN="
+            + start
+            + ", MAX="
+            + end);
+
     return Boundary.<Long>builder()
         .setPartitionColumn(partitionColumn)
-        .setStart(resultSet.getLong(1))
-        .setEnd(resultSet.getLong(2))
+        .setStart(start)
+        .setEnd(end)
         .setBoundarySplitter(BoundarySplitterFactory.create(Long.class))
         .setBoundaryTypeMapper(boundaryTypeMapper)
         .build();

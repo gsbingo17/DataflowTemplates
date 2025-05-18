@@ -142,7 +142,7 @@ export MAX_CONNECTIONS=0
 export SESSION_FILE_PATH=""
 export DISABLED_ALGORITHMS=<disabledAlgorithms>
 export EXTRA_FILES_TO_STAGE=<extraFilesToStage>
-export DEFAULT_LOG_LEVEL=INFO
+export DEFAULT_LOG_LEVEL=
 
 gcloud dataflow flex-template run "sourcedb-to-spanner-flex-job" \
   --project "$PROJECT" \

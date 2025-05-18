@@ -85,26 +85,63 @@ public final class JdbcSourceRowMapper implements JdbcIO.RowMapper<SourceRow> {
     var builder =
         SourceRow.builder(
             sourceSchemaReference, sourceTableSchema, shardId, getCurrentTimeMicros());
+
+    // Log the metadata about the ResultSet
+    try {
+      java.sql.ResultSetMetaData metaData = resultSet.getMetaData();
+      int columnCount = metaData.getColumnCount();
+      logger.info("ResultSet has {} columns", columnCount);
+      for (int i = 1; i <= columnCount; i++) {
+        logger.info(
+            "Column {}: Name={}, Type={}, TypeName={}",
+            i,
+            metaData.getColumnName(i),
+            metaData.getColumnType(i),
+            metaData.getColumnTypeName(i));
+      }
+    } catch (SQLException e) {
+      logger.warn("Failed to get ResultSet metadata", e);
+    }
+
     this.sourceTableSchema
         .sourceColumnNameToSourceColumnType()
         .entrySet()
         .forEach(
             entry -> {
               try {
+                String columnName = entry.getKey();
+                String columnType = entry.getValue().getName().toUpperCase();
+
+                logger.info("Processing column: Name={}, Type={}", columnName, columnType);
+
                 Schema schema =
-                    this.sourceTableSchema.getAvroPayload().getField(entry.getKey()).schema();
+                    this.sourceTableSchema.getAvroPayload().getField(columnName).schema();
                 // The Unified avro mapping produces a union of the mapped type with null type
                 // except for "Unsupported" case.
                 if (schema.isUnion()) {
                   schema = schema.getTypes().get(1);
                 }
-                builder.setField(
-                    entry.getKey(),
+
+                // Get the appropriate mapper for this column type
+                JdbcValueMapper<?> mapper =
                     this.mappingsProvider
                         .getMappings()
-                        .getOrDefault(
-                            entry.getValue().getName().toUpperCase(), JdbcValueMapper.UNSUPPORTED)
-                        .mapValue(resultSet, entry.getKey(), schema));
+                        .getOrDefault(columnType, JdbcValueMapper.UNSUPPORTED);
+
+                logger.info(
+                    "Using mapper for column {}: {}",
+                    columnName,
+                    mapper == JdbcValueMapper.UNSUPPORTED ? "UNSUPPORTED" : "SUPPORTED");
+
+                // Extract and map the value
+                Object value = mapper.mapValue(resultSet, columnName, schema);
+
+                logger.info(
+                    "Mapped value for column {}: {}",
+                    columnName,
+                    value == null ? "NULL" : value.toString());
+
+                builder.setField(columnName, value);
               } catch (SQLException e) {
                 mapperErrors.inc();
                 logger.error(

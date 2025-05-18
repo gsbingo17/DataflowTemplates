@@ -29,6 +29,8 @@ import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.io.gcp.spanner.SpannerConfig;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.options.ValueProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A template that copies data from a relational database using JDBC to an existing Spanner
@@ -67,6 +69,7 @@ import org.apache.beam.sdk.options.ValueProvider;
       "The relational database must be accessible from the subnet where Dataflow runs."
     })
 public class SourceDbToSpanner {
+  private static final Logger LOG = LoggerFactory.getLogger(SourceDbToSpanner.class);
 
   /**
    * Main entry point for executing the pipeline. This will run the pipeline asynchronously. If
@@ -92,6 +95,17 @@ public class SourceDbToSpanner {
    */
   @VisibleForTesting
   static PipelineResult run(SourceDbToSpannerOptions options) {
+    // Add debug logging
+    LOG.info("Running pipeline with options:");
+    LOG.info("SourceDbDialect: {}", options.getSourceDbDialect());
+    LOG.info("JdbcDriverClassName: {}", options.getJdbcDriverClassName());
+    LOG.info("SourceConfigURL: {}", options.getSourceConfigURL());
+    LOG.info("Username: {}", options.getUsername());
+    LOG.info("Tables: {}", options.getTables());
+    LOG.info("ProjectId: {}", options.getProjectId());
+    LOG.info("InstanceId: {}", options.getInstanceId());
+    LOG.info("DatabaseId: {}", options.getDatabaseId());
+
     // TODO - Validate if options are as expected
     Pipeline pipeline = Pipeline.create(options);
 
@@ -126,10 +140,34 @@ public class SourceDbToSpanner {
 
   @VisibleForTesting
   static SpannerConfig createSpannerConfig(SourceDbToSpannerOptions options) {
-    return SpannerConfig.create()
-        .withProjectId(ValueProvider.StaticValueProvider.of(options.getProjectId()))
-        .withHost(ValueProvider.StaticValueProvider.of(options.getSpannerHost()))
-        .withInstanceId(ValueProvider.StaticValueProvider.of(options.getInstanceId()))
-        .withDatabaseId(ValueProvider.StaticValueProvider.of(options.getDatabaseId()));
+    // Add debug logging
+    LOG.info("Creating SpannerConfig with the following values:");
+    LOG.info("ProjectId: {}", options.getProjectId());
+    LOG.info("InstanceId: {}", options.getInstanceId());
+    LOG.info("DatabaseId: {}", options.getDatabaseId());
+    LOG.info("SpannerHost: {}", options.getSpannerHost());
+
+    // Create SpannerConfig with direct values wrapped in StaticValueProvider
+    SpannerConfig config = SpannerConfig.create();
+
+    // Only add non-null values to the config
+    if (options.getProjectId() != null) {
+      config = config.withProjectId(ValueProvider.StaticValueProvider.of(options.getProjectId()));
+    }
+
+    if (options.getSpannerHost() != null) {
+      config = config.withHost(ValueProvider.StaticValueProvider.of(options.getSpannerHost()));
+    }
+
+    if (options.getInstanceId() != null) {
+      config = config.withInstanceId(ValueProvider.StaticValueProvider.of(options.getInstanceId()));
+    }
+
+    if (options.getDatabaseId() != null) {
+      config = config.withDatabaseId(ValueProvider.StaticValueProvider.of(options.getDatabaseId()));
+    }
+
+    LOG.info("Created SpannerConfig: {}", config);
+    return config;
   }
 }

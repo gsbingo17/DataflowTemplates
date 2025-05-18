@@ -21,6 +21,7 @@ import com.google.auto.value.AutoValue;
 import com.google.cloud.teleport.v2.source.reader.auth.dbauth.DbAuth;
 import com.google.cloud.teleport.v2.source.reader.io.jdbc.JdbcSchemaReference;
 import com.google.cloud.teleport.v2.source.reader.io.jdbc.dialectadapter.DialectAdapter;
+import com.google.cloud.teleport.v2.source.reader.io.jdbc.iowrapper.config.defaults.MssqlConfigDefaults;
 import com.google.cloud.teleport.v2.source.reader.io.jdbc.iowrapper.config.defaults.MySqlConfigDefaults;
 import com.google.cloud.teleport.v2.source.reader.io.jdbc.iowrapper.config.defaults.PostgreSQLConfigDefaults;
 import com.google.cloud.teleport.v2.source.reader.io.jdbc.rowmapper.JdbcValueMappingsProvider;
@@ -282,6 +283,34 @@ public abstract class JdbcIOWrapperConfig {
         .setSqlInitSeq(PostgreSQLConfigDefaults.DEFAULT_POSTGRESQL_INIT_SEQ)
         .setSchemaDiscoveryBackOff(
             PostgreSQLConfigDefaults.DEFAULT_POSTGRESQL_SCHEMA_DISCOVERY_BACKOFF)
+        .setTables(ImmutableList.of())
+        .setTableVsPartitionColumns(ImmutableMap.of())
+        .setMaxPartitions(null)
+        .setWaitOn(null)
+        .setMaxFetchSize(null)
+        .setDbParallelizationForReads(null)
+        .setDbParallelizationForSplitProcess(DEFAULT_PARALLELIZATION_FOR_SLIT_PROCESS)
+        .setReadWithUniformPartitionsFeatureEnabled(true)
+        .setTestOnBorrow(DEFAULT_TEST_ON_BORROW)
+        .setTestOnCreate(DEFAULT_TEST_ON_CREATE)
+        .setTestOnReturn(DEFAULT_TEST_ON_RETURN)
+        .setTestWhileIdle(DEFAULT_TEST_WILE_IDLE)
+        .setValidationQuery(DEFAULT_VALIDATEION_QUERY)
+        .setRemoveAbandonedTimeout(DEFAULT_REMOVE_ABANDONED_TIMEOUT)
+        .setMinEvictableIdleTimeMillis(DEFAULT_MIN_EVICTABLE_IDLE_TIME_MILLIS)
+        .setSchemaDiscoveryConnectivityTimeoutMilliSeconds(
+            DEFAULT_SCHEMA_DISCOVERY_CONNECTIVITY_TIMEOUT_MILLISECONDS);
+  }
+
+  public static Builder builderWithMsSqlDefaults() {
+    return new AutoValue_JdbcIOWrapperConfig.Builder()
+        .setSourceDbDialect(SQLDialect.MSSQL)
+        .setSchemaMapperType(MssqlConfigDefaults.DEFAULT_MSSQL_SCHEMA_MAPPER_TYPE)
+        .setDialectAdapter(MssqlConfigDefaults.DEFAULT_MSSQL_DIALECT_ADAPTER)
+        .setValueMappingsProvider(MssqlConfigDefaults.DEFAULT_MSSQL_VALUE_MAPPING_PROVIDER)
+        .setMaxConnections(MssqlConfigDefaults.DEFAULT_MSSQL_MAX_CONNECTIONS)
+        .setSqlInitSeq(MssqlConfigDefaults.DEFAULT_MSSQL_INIT_SEQ)
+        .setSchemaDiscoveryBackOff(MssqlConfigDefaults.DEFAULT_MSSQL_SCHEMA_DISCOVERY_BACKOFF)
         .setTables(ImmutableList.of())
         .setTableVsPartitionColumns(ImmutableMap.of())
         .setMaxPartitions(null)

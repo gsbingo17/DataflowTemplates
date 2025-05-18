@@ -23,6 +23,7 @@ public interface SourceDbToSpannerOptions extends CommonTemplateOptions {
   String CASSANDRA_SOURCE_DIALECT = "CASSANDRA";
   String MYSQL_SOURCE_DIALECT = "MYSQL";
   String PG_SOURCE_DIALECT = "POSTGRESQL";
+  String MSSQL_SOURCE_DIALECT = "MSSQL";
 
   @TemplateParameter.Enum(
       order = 1,
@@ -30,10 +31,11 @@ public interface SourceDbToSpannerOptions extends CommonTemplateOptions {
       enumOptions = {
         @TemplateParameter.TemplateEnumOption(CASSANDRA_SOURCE_DIALECT),
         @TemplateParameter.TemplateEnumOption(MYSQL_SOURCE_DIALECT),
-        @TemplateParameter.TemplateEnumOption(PG_SOURCE_DIALECT)
+        @TemplateParameter.TemplateEnumOption(PG_SOURCE_DIALECT),
+        @TemplateParameter.TemplateEnumOption(MSSQL_SOURCE_DIALECT)
       },
       description = "Dialect of the source database",
-      helpText = "Possible values are `CASSANDRA`, `MYSQL` and `POSTGRESQL`.")
+      helpText = "Possible values are `CASSANDRA`, `MYSQL`, `POSTGRESQL`, and `MSSQL`.")
   @Default.String("MYSQL")
   String getSourceDbDialect();
 
@@ -65,11 +67,11 @@ public interface SourceDbToSpannerOptions extends CommonTemplateOptions {
 
   @TemplateParameter.Text(
       order = 4,
-      regexes = {"(^jdbc:mysql://.*|^jdbc:postgresql://.*|^gs://.*)"},
+      regexes = {"(^jdbc:mysql://.*|^jdbc:postgresql://.*|^jdbc:sqlserver://.*|^gs://.*)"},
       groupName = "Source",
       description =
           "URL to connect to the source database host. It can be either of "
-              + "1. The JDBC connection URL - which must contain the host, port and source db name and can optionally contain properties like autoReconnect, maxReconnects etc. Format: `jdbc:{mysql|postgresql}://{host}:{port}/{dbName}?{parameters}`"
+              + "1. The JDBC connection URL - which must contain the host, port and source db name and can optionally contain properties like autoReconnect, maxReconnects etc. Format: `jdbc:{mysql|postgresql|sqlserver}://{host}:{port}/{dbName}?{parameters}`"
               + "2. The shard config path",
       helpText =
           "The JDBC connection URL string. For example, `jdbc:mysql://127.4.5.30:3306/my-db?autoReconnect=true&maxReconnects=10&unicode=true&characterEncoding=UTF-8` or the shard config")

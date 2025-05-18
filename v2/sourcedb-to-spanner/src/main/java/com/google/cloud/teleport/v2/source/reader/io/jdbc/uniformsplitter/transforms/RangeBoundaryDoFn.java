@@ -90,31 +90,50 @@ final class RangeBoundaryDoFn extends DoFn<ColumnForBoundaryQuery, Range> implem
     String boundaryQuery =
         dbAdapter.getBoundaryQuery(tableName, partitionColumns, input.columnName());
 
+    logger.info(
+        "Executing boundary query for column: {}, query: {}", input.columnName(), boundaryQuery);
+
     try (Connection conn = acquireConnection()) {
+      // Set query timeout to avoid hanging
       PreparedStatement stmt =
           conn.prepareStatement(
               boundaryQuery, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+      stmt.setQueryTimeout(30); // 30 seconds timeout
+
+      logger.info("Setting parameters for boundary query");
       new ColumnForBoundaryQueryPreparedStatementSetter(partitionColumns)
           .setParameters(input, stmt);
+
+      logger.info("Executing boundary query for column: {}", input.columnName());
       ResultSet rs = stmt.executeQuery();
+
+      logger.info("Processing boundary query results for column: {}", input.columnName());
       Range output =
           BoundaryExtractorFactory.create(input.columnClass())
               .getBoundary(input.partitionColumn(), rs, boundaryTypeMapper)
               .toRange(input.parentRange(), c);
-      logger.debug(
-          "Got Boundary, Input = {}, Range = {}, Query = {}, DataSource = {}",
-          input,
+
+      logger.info(
+          "Got Boundary for column: {}, Range: {}, Min: {}, Max: {}",
+          input.columnName(),
           output,
-          boundaryQuery,
-          dataSource);
+          output.start(),
+          output.end());
+
       out.output(output); // Output the counted Range.
     } catch (SQLException e) {
-      logger.warn(
-          "SQL Exception = {} while getting boundary of columnForRange = {}, Query = {}, DataSource = {}. This will be retried by Beam Runner.",
-          e,
-          input,
+      logger.error(
+          "SQL Exception while getting boundary of column: {}, Error: {}, Query: {}, Message: {}",
+          input.columnName(),
+          e.getClass().getName(),
           boundaryQuery,
-          dataSource);
+          e.getMessage());
+
+      // Additional error details for MSSQL
+      if (e.getErrorCode() != 0) {
+        logger.error("SQL Error code: {}, SQL State: {}", e.getErrorCode(), e.getSQLState());
+      }
+
       throw e;
     } catch (Exception e) {
       // This exception is triggered from nullness checks of checker framework for the input to
@@ -123,11 +142,10 @@ final class RangeBoundaryDoFn extends DoFn<ColumnForBoundaryQuery, Range> implem
       // It's hard to trigger this exception for UT as the checks are not running by default in the
       // UT.
       logger.error(
-          "Exception = {}, ColumnForRange = {}, Query = {}, DataSource = {}",
-          e,
-          input,
-          boundaryQuery,
-          dataSource);
+          "Exception while getting boundary of column: {}, Error: {}, Message: {}",
+          input.columnName(),
+          e.getClass().getName(),
+          e.getMessage());
       throw new RuntimeException(e);
     }
   }

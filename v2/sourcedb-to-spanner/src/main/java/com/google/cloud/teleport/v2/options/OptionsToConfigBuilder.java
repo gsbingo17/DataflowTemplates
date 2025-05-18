@@ -15,6 +15,7 @@
  */
 package com.google.cloud.teleport.v2.options;
 
+import static com.google.cloud.teleport.v2.source.reader.io.jdbc.iowrapper.config.JdbcIOWrapperConfig.builderWithMsSqlDefaults;
 import static com.google.cloud.teleport.v2.source.reader.io.jdbc.iowrapper.config.JdbcIOWrapperConfig.builderWithMySqlDefaults;
 import static com.google.cloud.teleport.v2.source.reader.io.jdbc.iowrapper.config.JdbcIOWrapperConfig.builderWithPostgreSQLDefaults;
 
@@ -140,6 +141,14 @@ public final class OptionsToConfigBuilder {
           sourceDbURL = sourceDbURL + "&" + connectionProperties;
         }
         break;
+      case MSSQL:
+        if (sourceDbURL == null) {
+          sourceDbURL = "jdbc:sqlserver://" + host + ":" + port + ";databaseName=" + dbName;
+          if (StringUtils.isNotBlank(connectionProperties)) {
+            sourceDbURL = sourceDbURL + ";" + connectionProperties;
+          }
+        }
+        break;
     }
 
     builder.setSourceDbURL(sourceDbURL);
@@ -250,20 +259,55 @@ public final class OptionsToConfigBuilder {
   }
 
   private static String extractDbFromURL(String sourceDbUrl) {
-    URI uri;
-    try {
-      // Strip off the prefix 'jdbc:' which the library cannot handle.
-      uri = new URI(sourceDbUrl.substring(5));
-    } catch (URISyntaxException e) {
-      throw new RuntimeException(String.format("Unable to parse url: %s", sourceDbUrl), e);
+    // Handle MSSQL URLs which have a different format:
+    // jdbc:sqlserver://host:port;databaseName=dbname
+    if (sourceDbUrl.startsWith("jdbc:sqlserver:")) {
+      // Find the databaseName parameter
+      int dbNameIndex = sourceDbUrl.indexOf("databaseName=");
+      if (dbNameIndex != -1) {
+        // Extract the database name
+        String dbNamePart = sourceDbUrl.substring(dbNameIndex + "databaseName=".length());
+        // If there are other parameters after databaseName, extract only the database name
+        int endIndex = dbNamePart.indexOf(';');
+        if (endIndex != -1) {
+          return dbNamePart.substring(0, endIndex);
+        } else {
+          return dbNamePart;
+        }
+      } else {
+        throw new RuntimeException(
+            String.format("Unable to find databaseName in MSSQL URL: %s", sourceDbUrl));
+      }
+    } else {
+      // Handle MySQL and PostgreSQL URLs which have format: jdbc:mysql://host:port/dbname
+      URI uri;
+      try {
+        // Strip off the prefix 'jdbc:' which the library cannot handle.
+        uri = new URI(sourceDbUrl.substring(5));
+      } catch (URISyntaxException e) {
+        throw new RuntimeException(String.format("Unable to parse url: %s", sourceDbUrl), e);
+      }
+
+      String path = uri.getPath();
+      if (path == null || path.isEmpty() || path.equals("/")) {
+        throw new RuntimeException(
+            String.format("Unable to extract database name from URL: %s", sourceDbUrl));
+      }
+
+      // Remove '/' before returning.
+      if (path.length() > 1) {
+        return path.substring(1);
+      } else {
+        throw new RuntimeException(String.format("Invalid database path in URL: %s", sourceDbUrl));
+      }
     }
-    // Remove '/' before returning.
-    return uri.getPath().substring(1);
   }
 
   private static JdbcIOWrapperConfig.Builder builderWithDefaultsFor(SQLDialect dialect) {
     if (dialect == SQLDialect.POSTGRESQL) {
       return builderWithPostgreSQLDefaults();
+    } else if (dialect == SQLDialect.MSSQL) {
+      return builderWithMsSqlDefaults();
     }
     return builderWithMySqlDefaults();
   }
@@ -276,6 +320,13 @@ public final class OptionsToConfigBuilder {
     if (dialect == SQLDialect.POSTGRESQL) {
       if (StringUtils.isBlank(namespace)) {
         builder.setNamespace(DEFAULT_POSTGRESQL_NAMESPACE);
+      } else {
+        builder.setNamespace(namespace);
+      }
+    } else if (dialect == SQLDialect.MSSQL) {
+      // In MSSQL, the default schema is 'dbo'
+      if (StringUtils.isBlank(namespace)) {
+        builder.setNamespace("dbo");
       } else {
         builder.setNamespace(namespace);
       }

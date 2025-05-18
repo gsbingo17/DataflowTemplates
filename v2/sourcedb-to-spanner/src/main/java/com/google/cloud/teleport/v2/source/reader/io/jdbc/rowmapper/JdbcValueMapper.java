@@ -19,6 +19,8 @@ import java.io.Serializable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import org.apache.avro.Schema;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Wrap the {@link ResultSetValueExtractor} and {@link ResultSetValueMapper} to map a given field of
@@ -27,6 +29,8 @@ import org.apache.avro.Schema;
  * @param <T>
  */
 public class JdbcValueMapper<T extends Object> implements Serializable {
+
+  private static final Logger logger = LoggerFactory.getLogger(JdbcValueMapper.class);
 
   private ResultSetValueExtractor<T> valueExtractor;
   private ResultSetValueMapper<T> valueMapper;
@@ -55,11 +59,35 @@ public class JdbcValueMapper<T extends Object> implements Serializable {
    *     indicates change in source schema during migration.
    */
   public Object mapValue(ResultSet rs, String fieldName, Schema fieldSchema) throws SQLException {
-    var extractedValue = valueExtractor.extract(rs, fieldName);
-    if (extractedValue == null || rs.wasNull()) {
+    logger.info("Extracting value for field: {}, schema: {}", fieldName, fieldSchema);
+
+    try {
+      // Try to check if the column exists in the ResultSet
+      rs.findColumn(fieldName);
+      logger.info("Column '{}' exists in the ResultSet", fieldName);
+    } catch (SQLException e) {
+      logger.warn("Column '{}' does not exist in the ResultSet: {}", fieldName, e.getMessage());
       return null;
     }
-    return valueMapper.map(extractedValue, fieldSchema);
+
+    var extractedValue = valueExtractor.extract(rs, fieldName);
+    logger.info(
+        "Extracted value for field {}: {}",
+        fieldName,
+        extractedValue == null ? "NULL" : extractedValue.toString());
+
+    if (extractedValue == null || rs.wasNull()) {
+      logger.info("Field {} is NULL (wasNull={})", fieldName, rs.wasNull());
+      return null;
+    }
+
+    Object mappedValue = valueMapper.map(extractedValue, fieldSchema);
+    logger.info(
+        "Mapped value for field {}: {}",
+        fieldName,
+        mappedValue == null ? "NULL" : mappedValue.toString());
+
+    return mappedValue;
   }
 
   public static final JdbcValueMapper<?> UNSUPPORTED =
