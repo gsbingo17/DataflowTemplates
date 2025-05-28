@@ -35,7 +35,7 @@ public final class MssqlMappingProvider {
           .put("BINARY", UnifiedMappingProvider.Type.STRING)
           .put("BIT", UnifiedMappingProvider.Type.BOOLEAN)
           .put("CHAR", UnifiedMappingProvider.Type.STRING)
-          .put("DATE", UnifiedMappingProvider.Type.TIMESTAMP)
+          .put("DATE", UnifiedMappingProvider.Type.DATE)
           .put("DATETIME", UnifiedMappingProvider.Type.DATETIME)
           .put("DATETIME2", UnifiedMappingProvider.Type.DATETIME)
           .put("DATETIMEOFFSET", UnifiedMappingProvider.Type.TIMESTAMP)
