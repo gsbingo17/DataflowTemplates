@@ -467,7 +467,7 @@ public final class JdbcIoWrapper implements IoWrapper {
              * Currently we mostly deal with auto incrementing keys, so we don't need a split depth to make the partition uniform, unless there is a large dataset with a lot of holes.
              * TODO(vardhanvthigle): if index is not of the type of a single auto incrementing key, don't set this.
              */
-            .setSplitStageCountHint(0L)
+            .setSplitStageCountHint(3L)
             .setDbParallelizationForSplitProcess(config.dbParallelizationForSplitProcess())
             .setDbParallelizationForReads(config.dbParallelizationForReads())
             .setAdditionalOperationsOnRanges(config.additionalOperationsOnRanges());
