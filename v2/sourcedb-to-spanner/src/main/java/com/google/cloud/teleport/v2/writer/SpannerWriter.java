@@ -15,10 +15,10 @@
  */
 package com.google.cloud.teleport.v2.writer;
 
-import com.google.cloud.spanner.Mutation;
 import com.google.cloud.teleport.v2.templates.RowContext;
 import java.io.Serializable;
 import javax.annotation.Nullable;
+import org.apache.beam.sdk.io.gcp.spanner.MutationGroup;
 import org.apache.beam.sdk.io.gcp.spanner.SpannerConfig;
 import org.apache.beam.sdk.io.gcp.spanner.SpannerIO;
 import org.apache.beam.sdk.io.gcp.spanner.SpannerIO.FailureMode;
@@ -71,10 +71,10 @@ public class SpannerWriter implements Serializable {
     LOG.info("initiating write to spanner");
     SpannerWriteResult writeResult =
         rows.apply(
-                "extractMutation",
-                MapElements.into(TypeDescriptor.of(Mutation.class))
-                    .via((RowContext r) -> r.mutation()))
-            .apply("WriteToSpanner", getSpannerWrite());
+                "extractMutationGroup",
+                MapElements.into(TypeDescriptor.of(MutationGroup.class))
+                    .via((RowContext r) -> r.mutationGroup()))
+            .apply("WriteToSpanner", getSpannerWrite().grouped());
 
     // This current returns only the failed mutation.
     // This needs to return the whole RowContext and Exception

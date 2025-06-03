@@ -22,6 +22,7 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
 import javax.annotation.Nullable;
+import org.apache.beam.sdk.io.gcp.spanner.MutationGroup;
 
 /** Carrier of all the context of a given row through the duration of this pipeline. */
 @AutoValue
@@ -31,6 +32,9 @@ public abstract class RowContext implements Serializable {
 
   @Nullable
   public abstract Mutation mutation();
+
+  @Nullable
+  public abstract MutationGroup mutationGroup();
 
   @Nullable
   public abstract Throwable err();
@@ -45,6 +49,8 @@ public abstract class RowContext implements Serializable {
     public abstract Builder setRow(SourceRow row);
 
     public abstract Builder setMutation(Mutation m);
+
+    public abstract Builder setMutationGroup(MutationGroup mg);
 
     public abstract Builder setErr(Throwable t);
 

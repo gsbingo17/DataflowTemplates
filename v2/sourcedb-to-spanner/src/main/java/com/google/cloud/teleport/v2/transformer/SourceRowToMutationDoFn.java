@@ -31,6 +31,7 @@ import java.io.Serializable;
 import java.util.Map;
 import javax.annotation.Nullable;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.beam.sdk.io.gcp.spanner.MutationGroup;
 import org.apache.beam.sdk.metrics.Counter;
 import org.apache.beam.sdk.metrics.Metrics;
 import org.apache.beam.sdk.transforms.DoFn;
@@ -113,9 +114,15 @@ public abstract class SourceRowToMutationDoFn extends DoFn<SourceRow, RowContext
       String spannerTableName = iSchemaMapper().getSpannerTableName("", srcTableName);
       // TODO: Move the mutation generation to writer. Create generic record here instead
       Mutation mutation = mutationFromMap(spannerTableName, values, insertOnly());
+      MutationGroup mutationGroup = MutationGroup.create(mutation);
       output
           .get(SourceDbToSpannerConstants.ROW_TRANSFORMATION_SUCCESS)
-          .output(RowContext.builder().setRow(sourceRow).setMutation(mutation).build());
+          .output(
+              RowContext.builder()
+                  .setRow(sourceRow)
+                  .setMutation(mutation)
+                  .setMutationGroup(mutationGroup)
+                  .build());
     } catch (Exception e) {
       LOG.error("Error while processing element", e);
       transformerErrors.inc();
