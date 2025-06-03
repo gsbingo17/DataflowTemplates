@@ -316,7 +316,10 @@ public class PipelineController {
           options.getMaxConnections(),
           options.getNumPartitions(),
           waitOnSignal,
-          options.getFetchSize());
+          options.getFetchSize(),
+          options.getReadWithUniformPartitionsFeatureEnabled(),
+          options.getSplitStageCountHint(),
+          com.google.common.collect.ImmutableMap.of());
     }
 
     @Override

@@ -276,4 +276,39 @@ public interface SourceDbToSpannerOptions extends CommonTemplateOptions {
   Long getBatchSizeForSpannerMutations();
 
   void setBatchSizeForSpannerMutations(Long value);
+
+  @TemplateParameter.Boolean(
+      order = 23,
+      optional = true,
+      description = "Enable ReadWithUniformPartitions feature",
+      helpText =
+          "When true, uses advanced ReadWithUniformPartitions with adaptive splitting. "
+              + "When false, uses standard Apache Beam JdbcIO.readWithPartitions. "
+              + "Default: false (standard mode).")
+  @Default.Boolean(false)
+  Boolean getReadWithUniformPartitionsFeatureEnabled();
+
+  void setReadWithUniformPartitionsFeatureEnabled(Boolean value);
+
+  @TemplateParameter.Integer(
+      order = 24,
+      optional = true,
+      description = "Split stage count hint for ReadWithUniformPartitions",
+      helpText =
+          "Number of refinement stages for adaptive partitioning. Only used when ReadWithUniformPartitions is enabled. 0=no splitting, 1-2=basic, 3-5=recommended, 6+=advanced. Default: 3.")
+  @Default.Integer(3)
+  Integer getSplitStageCountHint();
+
+  void setSplitStageCountHint(Integer value);
+
+  @TemplateParameter.Text(
+      order = 25,
+      optional = true,
+      description = "Manual partition column specification",
+      helpText =
+          "Override automatic partition column detection. Format: table1:column1,table2:column2. Example: Orders:UserID,Products:ProductID")
+  @Default.String("")
+  String getTablePartitionColumns();
+
+  void setTablePartitionColumns(String value);
 }

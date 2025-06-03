@@ -115,9 +115,16 @@ public abstract class JdbcIOWrapperConfig {
 
   /**
    * Temporary, internal feature flag for reader to enable or disable {@link
-   * ReadWithUniformPartitions}. Defaults to true.
+   * ReadWithUniformPartitions}. Defaults to false.
    */
   public abstract Boolean readWithUniformPartitionsFeatureEnabled();
+
+  /**
+   * Split stage count hint for ReadWithUniformPartitions. Only used when
+   * readWithUniformPartitionsFeatureEnabled is true. Defaults to 3.
+   */
+  @Nullable
+  public abstract Integer splitStageCountHint();
 
   /**
    * PCollections to wait on before doing the read of configured tables. Ignored if {@link
@@ -260,7 +267,8 @@ public abstract class JdbcIOWrapperConfig {
         .setMaxFetchSize(null)
         .setDbParallelizationForReads(null)
         .setDbParallelizationForSplitProcess(DEFAULT_PARALLELIZATION_FOR_SLIT_PROCESS)
-        .setReadWithUniformPartitionsFeatureEnabled(true)
+        .setReadWithUniformPartitionsFeatureEnabled(false)
+        .setSplitStageCountHint(3)
         .setTestOnBorrow(DEFAULT_TEST_ON_BORROW)
         .setTestOnCreate(DEFAULT_TEST_ON_CREATE)
         .setTestOnReturn(DEFAULT_TEST_ON_RETURN)
@@ -290,7 +298,8 @@ public abstract class JdbcIOWrapperConfig {
         .setMaxFetchSize(null)
         .setDbParallelizationForReads(null)
         .setDbParallelizationForSplitProcess(DEFAULT_PARALLELIZATION_FOR_SLIT_PROCESS)
-        .setReadWithUniformPartitionsFeatureEnabled(true)
+        .setReadWithUniformPartitionsFeatureEnabled(false)
+        .setSplitStageCountHint(3)
         .setTestOnBorrow(DEFAULT_TEST_ON_BORROW)
         .setTestOnCreate(DEFAULT_TEST_ON_CREATE)
         .setTestOnReturn(DEFAULT_TEST_ON_RETURN)
@@ -318,7 +327,8 @@ public abstract class JdbcIOWrapperConfig {
         .setMaxFetchSize(null)
         .setDbParallelizationForReads(null)
         .setDbParallelizationForSplitProcess(DEFAULT_PARALLELIZATION_FOR_SLIT_PROCESS)
-        .setReadWithUniformPartitionsFeatureEnabled(true)
+        .setReadWithUniformPartitionsFeatureEnabled(false)
+        .setSplitStageCountHint(3)
         .setTestOnBorrow(DEFAULT_TEST_ON_BORROW)
         .setTestOnCreate(DEFAULT_TEST_ON_CREATE)
         .setTestOnReturn(DEFAULT_TEST_ON_RETURN)
@@ -370,6 +380,8 @@ public abstract class JdbcIOWrapperConfig {
     public abstract Builder setSqlInitSeq(ImmutableList<String> value);
 
     public abstract Builder setReadWithUniformPartitionsFeatureEnabled(Boolean value);
+
+    public abstract Builder setSplitStageCountHint(@Nullable Integer value);
 
     public abstract Builder setWaitOn(@Nullable OnSignal<?> value);
 

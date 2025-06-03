@@ -51,10 +51,18 @@ public class SpannerWriter implements Serializable {
   }
 
   protected Write setBatchSize(Write write) {
-    if (batchSize != null && batchSize >= 0) {
-      LOG.info("Setting Spanner Batch Size as {}", batchSize);
-      return write.withBatchSizeBytes(batchSize);
+    if (batchSize != null) {
+      if (batchSize >= 0) {
+        LOG.info("Setting Spanner Batch Size as {}", batchSize);
+        return write.withBatchSizeBytes(batchSize);
+      } else {
+        // If batchSize < 0, use Apache Beam's SpannerIO default (1MB)
+        LOG.info("Using Apache Beam's SpannerIO default batch size (1MB)");
+        return write;
+      }
     } else {
+      // If batchSize is null, use Apache Beam's SpannerIO default (1MB)
+      LOG.info("Using Apache Beam's SpannerIO default batch size (1MB)");
       return write;
     }
   }

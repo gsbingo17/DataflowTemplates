@@ -27,6 +27,7 @@ import com.google.cloud.teleport.v2.source.reader.io.jdbc.iowrapper.config.defau
 import com.google.cloud.teleport.v2.source.reader.io.schema.SourceSchemaReference;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.re2j.Matcher;
 import com.google.re2j.Pattern;
 import java.net.URI;
@@ -79,7 +80,10 @@ public final class OptionsToConfigBuilder {
         maxConnections,
         numPartitions,
         waitOn,
-        options.getFetchSize());
+        options.getFetchSize(),
+        options.getReadWithUniformPartitionsFeatureEnabled(),
+        options.getSplitStageCountHint(),
+        parseTablePartitionColumns(options.getTablePartitionColumns()));
   }
 
   public static JdbcIOWrapperConfig getJdbcIOWrapperConfig(
@@ -99,7 +103,10 @@ public final class OptionsToConfigBuilder {
       long maxConnections,
       Integer numPartitions,
       Wait.OnSignal<?> waitOn,
-      Integer fetchSize) {
+      Integer fetchSize,
+      Boolean readWithUniformPartitionsFeatureEnabled,
+      Integer splitStageCountHint,
+      ImmutableMap<String, ImmutableList<String>> tablePartitionColumns) {
     JdbcIOWrapperConfig.Builder builder = builderWithDefaultsFor(sqlDialect);
     SourceSchemaReference sourceSchemaReference =
         sourceSchemaReferenceFrom(sqlDialect, dbName, namespace);
@@ -163,6 +170,20 @@ public final class OptionsToConfigBuilder {
     builder.setMaxPartitions(numPartitions);
     builder = builder.setTables(ImmutableList.copyOf(tables));
     builder = builder.setMaxFetchSize(fetchSize);
+
+    // Set the new parameters
+    if (readWithUniformPartitionsFeatureEnabled != null) {
+      builder =
+          builder.setReadWithUniformPartitionsFeatureEnabled(
+              readWithUniformPartitionsFeatureEnabled);
+    }
+    if (splitStageCountHint != null) {
+      builder = builder.setSplitStageCountHint(splitStageCountHint);
+    }
+    if (tablePartitionColumns != null && !tablePartitionColumns.isEmpty()) {
+      builder = builder.setTableVsPartitionColumns(tablePartitionColumns);
+    }
+
     return builder.build();
   }
 
@@ -301,6 +322,31 @@ public final class OptionsToConfigBuilder {
         throw new RuntimeException(String.format("Invalid database path in URL: %s", sourceDbUrl));
       }
     }
+  }
+
+  /**
+   * Parse the tablePartitionColumns parameter from the options.
+   *
+   * @param input The tablePartitionColumns parameter value in the format
+   *     "table1:column1,table2:column2"
+   * @return A map of table names to partition column names
+   */
+  private static ImmutableMap<String, ImmutableList<String>> parseTablePartitionColumns(
+      String input) {
+    if (StringUtils.isBlank(input)) {
+      return ImmutableMap.of();
+    }
+
+    ImmutableMap.Builder<String, ImmutableList<String>> builder = ImmutableMap.builder();
+    for (String pair : input.split(",")) {
+      String[] parts = pair.split(":");
+      if (parts.length == 2) {
+        String tableName = parts[0].trim();
+        String columnName = parts[1].trim();
+        builder.put(tableName, ImmutableList.of(columnName));
+      }
+    }
+    return builder.build();
   }
 
   private static JdbcIOWrapperConfig.Builder builderWithDefaultsFor(SQLDialect dialect) {
